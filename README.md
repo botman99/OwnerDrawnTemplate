@@ -6,3 +6,4 @@ This plugin allows you to have an owner drawn [Custom Control](https://msdn.micr
 
 This plugin supports both 32 bit and 64 bit versions of Notepad++.
 
+Download the executables [here](https://github.com/botman99/OwnerDrawnTemplate/releases)
