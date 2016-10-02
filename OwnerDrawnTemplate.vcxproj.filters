@@ -1,0 +1,86 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\DockingFeature">
+      <UniqueIdentifier>{d1b5ee95-ce13-4c46-b1b5-fc24a765ab4c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\DockingFeature">
+      <UniqueIdentifier>{99ad1d38-4ff8-4089-bca3-5f3114b6c104}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\OwnerDrawnTemplate">
+      <UniqueIdentifier>{7e2842c2-b92f-4aaa-ae02-b21496b88b9f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\OwnerDrawnTemplate">
+      <UniqueIdentifier>{77c53c15-5fc0-457a-b765-a89f686c166f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\menuCmdID.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Notepad_plus_msgs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\PluginInterface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Scintilla.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\DockingFeature\Docking.h">
+      <Filter>Header Files\DockingFeature</Filter>
+    </ClInclude>
+    <ClInclude Include="src\DockingFeature\DockingDlgInterface.h">
+      <Filter>Header Files\DockingFeature</Filter>
+    </ClInclude>
+    <ClInclude Include="src\DockingFeature\dockingResource.h">
+      <Filter>Header Files\DockingFeature</Filter>
+    </ClInclude>
+    <ClInclude Include="src\DockingFeature\StaticDialog.h">
+      <Filter>Header Files\DockingFeature</Filter>
+    </ClInclude>
+    <ClInclude Include="src\DockingFeature\Window.h">
+      <Filter>Header Files\DockingFeature</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OwnerDrawnTemplate\Inc\keys.h">
+      <Filter>Header Files\OwnerDrawnTemplate</Filter>
+    </ClInclude>
+    <ClInclude Include="OwnerDrawnTemplate\Inc\NppParameters.h">
+      <Filter>Header Files\OwnerDrawnTemplate</Filter>
+    </ClInclude>
+    <ClInclude Include="OwnerDrawnTemplate\Inc\OwnerDrawnTemplate.h">
+      <Filter>Header Files\OwnerDrawnTemplate</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\DockingFeature\StaticDialog.cpp">
+      <Filter>Source Files\DockingFeature</Filter>
+    </ClCompile>
+    <ClCompile Include="OwnerDrawnTemplate\Src\dllmain.cpp">
+      <Filter>Source Files\OwnerDrawnTemplate</Filter>
+    </ClCompile>
+    <ClCompile Include="OwnerDrawnTemplate\Src\OwnerDrawnTemplate.cpp">
+      <Filter>Source Files\OwnerDrawnTemplate</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="OwnerDrawnTemplate.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>
