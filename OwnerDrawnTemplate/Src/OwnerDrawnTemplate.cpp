@@ -52,7 +52,7 @@ NppData nppData;
 COwnerDrawnTemplate OwnerDrawnTemplate_MAIN;
 COwnerDrawnTemplate OwnerDrawnTemplate_SUB;
 
-unsigned int gCurrentView = MAIN_VIEW;
+int gCurrentView = -1;
 
 
 void AboutDlg()
@@ -66,7 +66,7 @@ void ToggleDlg()
 	{
 		OwnerDrawnTemplate_MAIN.ToggleActiveDoc();
 	}
-	else
+	else if( gCurrentView == SUB_VIEW )
 	{
 		OwnerDrawnTemplate_SUB.ToggleActiveDoc();
 	}
@@ -133,6 +133,8 @@ void UpdateDocs()
 
 		SetupWindows();
 
+		RedrawListView();
+
 		UpdateFocus();
 	}
 }
@@ -148,7 +150,7 @@ void UpdateFocus()
 		{
 			OwnerDrawnTemplate_MAIN.UpdateFocus();
 		}
-		else
+		else if( gCurrentView == SUB_VIEW )
 		{
 			OwnerDrawnTemplate_SUB.UpdateFocus();
 		}
@@ -159,6 +161,19 @@ void SetupWindows()
 {
 	OwnerDrawnTemplate_MAIN.SetupWindow();
 	OwnerDrawnTemplate_SUB.SetupWindow();
+}
+
+void RedrawListView()
+{
+	if( OwnerDrawnTemplate_MAIN.IsActiveDocEnabled() )  // if the active document is enabled redraw the list view
+	{
+		OwnerDrawnTemplate_MAIN.RedrawListView();
+	}
+
+	if( OwnerDrawnTemplate_SUB.IsActiveDocEnabled() )  // if the active document is enabled redraw the list view
+	{
+		OwnerDrawnTemplate_SUB.RedrawListView();
+	}
 }
 
 
@@ -185,35 +200,42 @@ void COwnerDrawnTemplate::init(int in_view)
 
 void COwnerDrawnTemplate::SetupWindow()
 {
-	if( bIsNppReady && (active_doc_index >= 0) && (active_doc_index < (INT)Documents.size()) )
+	if( bIsNppReady )
 	{
-		if( Documents[active_doc_index].bIsEnabled )
+		if( active_doc_index == -1 )  // no documents open in this view?
 		{
-			if( !IsWindowVisible(_hSelf) )  // if the owner drawn window is not visible (hidden), show it and set the proper window size and position
+			::ShowWindow(_hSelf, SW_HIDE);  // hide our window
+			::ShowWindow(_hListCtrl, SW_HIDE);  // hide the list control in our window
+			::ShowWindow(_hParentHandle, SW_HIDE);  // hide the parent handle window
+		}
+		else if( IsActiveDocEnabled() )
+		{
+			RECT rect;
+			POINT point;
+
+			::GetWindowRect(_hParentHandle, &rect);
+
+			point.x = rect.left;
+			point.y = rect.top;
+
+			::ScreenToClient(nppData._nppHandle, &point);
+			rect.left = point.x;
+			rect.top = point.y;
+
+			point.x = rect.right;
+			point.y = rect.bottom;
+
+			::ScreenToClient(nppData._nppHandle, &point);
+			rect.right = point.x;
+			rect.bottom = point.y;
+
+			DebugLog("SetupWindow: %s, left=%d, top=%d, right=%d, bottom=%d", (view == 0) ? "MAIN_VIEW" : "SUB_VIEW", rect.left, rect.top, rect.right, rect.bottom);
+
+			// set the proper window size and position
+			::SetWindowPos(_hSelf, NULL, rect.left, rect.top, rect.right-rect.left, rect.bottom-rect.top, FALSE);
+
+			if( !IsWindowVisible(_hSelf) )  // if the owner drawn window is not visible (hidden), show it and hide the parent window
 			{
-				RECT rect;
-				POINT point;
-
-				::GetWindowRect(_hParentHandle, &rect);
-
-				point.x = rect.left;
-				point.y = rect.top;
-
-				::ScreenToClient(nppData._nppHandle, &point);
-				rect.left = point.x;
-				rect.top = point.y;
-
-				point.x = rect.right;
-				point.y = rect.bottom;
-
-				::ScreenToClient(nppData._nppHandle, &point);
-				rect.right = point.x;
-				rect.bottom = point.y;
-
-				::SetWindowPos(_hSelf, NULL, rect.left, rect.top, rect.right-rect.left, rect.bottom-rect.top, FALSE);
-
-				::RedrawWindow(_hListCtrl, NULL, NULL, RDW_INVALIDATE);  // redraw the owner drawn window
-
 				::ShowWindow(_hSelf, SW_SHOW);  // show our window
 				::ShowWindow(_hListCtrl, SW_SHOW);  // show the list control in our window
 				::ShowWindow(_hParentHandle, SW_HIDE);  // hide the parent handle window (the normal text view)
@@ -233,7 +255,7 @@ void COwnerDrawnTemplate::SetupWindow()
 
 void COwnerDrawnTemplate::ToggleActiveDoc()
 {
-	if( (active_doc_index >= 0) && (active_doc_index < (INT)Documents.size()) )
+	if( IsActiveDocValid() )
 	{
 		Documents[active_doc_index].bIsEnabled = !Documents[active_doc_index].bIsEnabled;
 		//DebugLog("ToggleActiveDoc() - Documents[%d].bIsEnabled = %s", active_doc_index, Documents[active_doc_index].bIsEnabled ? "TRUE" : "FALSE");
@@ -271,21 +293,11 @@ void COwnerDrawnTemplate::UpdateDocs(LPCTSTR* Filenames, UINT filename_count, IN
 
 	// set the current active document index
 	active_doc_index = in_active_doc_index;
-
-	if( previous_active_doc_index != active_doc_index )  // has the active document changed?
-	{
-		if( (active_doc_index >= 0) && (active_doc_index < (INT)Documents.size()) )  // if the document is active redraw the list view
-		{
-			RedrawListView();
-		}
-	}
-
-	SetupWindows();
 }
 
 void COwnerDrawnTemplate::UpdateFocus()
 {
-	if( bIsNppReady && (active_doc_index >= 0) && (active_doc_index < (INT)Documents.size()) )  // if a document is active see if it needs FOCUS
+	if( bIsNppReady && IsActiveDocValid() )  // if a document is active see if it needs FOCUS
 	{
 		if( Documents[active_doc_index].bIsEnabled && (GetFocus() == nppData._nppHandle) )  // if the document is enabled, but not focused, set focus
 		{
@@ -300,11 +312,19 @@ void COwnerDrawnTemplate::UpdateFocus()
 	}
 }
 
+bool COwnerDrawnTemplate::IsActiveDocValid()
+{
+	return (active_doc_index >= 0) && (active_doc_index < (INT)Documents.size());
+}
+
+bool COwnerDrawnTemplate::IsActiveDocEnabled()
+{
+	return IsActiveDocValid() && Documents[active_doc_index].bIsEnabled;
+}
+
 void COwnerDrawnTemplate::RedrawListView()
 {
-	int num_rows = ListView_GetItemCount(_hListCtrl);
-
-	ListView_RedrawItems(_hListCtrl, 0, num_rows);
+	::RedrawWindow(_hListCtrl, NULL, NULL, RDW_INVALIDATE);  // redraw the owner drawn window
 }
 
 INT_PTR CALLBACK COwnerDrawnTemplate::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
@@ -398,7 +418,7 @@ INT_PTR CALLBACK COwnerDrawnTemplate::run_dlgProc(UINT message, WPARAM wParam, L
 								}
 								else
 								{
-									swprintf(Buffer, buffer_len, TEXT("%ld"), active_doc_index);
+									swprintf(Buffer, buffer_len, TEXT("Document #%ld"), active_doc_index);
 									wcsncpy_s(lpdi->item.pszText, lpdi->item.cchTextMax, Buffer, buffer_len);
 								}
 							}
@@ -432,13 +452,13 @@ INT_PTR CALLBACK COwnerDrawnTemplate::run_dlgProc(UINT message, WPARAM wParam, L
 
 LRESULT COwnerDrawnTemplate::runProcList(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
-	if( bIsNppReady && (active_doc_index >= 0) && (active_doc_index < (INT)Documents.size()) && Documents[active_doc_index].bIsEnabled )
+	if( bIsNppReady && IsActiveDocEnabled() )
 	{
 		switch (Message)
 		{
 			case WM_SETFOCUS:
 			{
-				DebugLog("runProcList: WM_SETFOCUS (%s)", (view == 0) ? "MAIN_VIEW" : "SUB_VIEW");
+				//DebugLog("runProcList: WM_SETFOCUS (%s)", (view == 0) ? "MAIN_VIEW" : "SUB_VIEW");
 				break;
 			}
 
@@ -638,8 +658,33 @@ LRESULT CALLBACK SubWndProcNotepad(HWND hWnd, UINT message, WPARAM wParam, LPARA
 				case IDM_VIEW_CLONE_TO_ANOTHER_VIEW:
 				{
 					//DebugLog("SubWndProcNotepad: IDM_VIEW_GOTO_ANOTHER_VIEW / IDM_VIEW_CLONE_TO_ANOTHER_VIEW");
+
+					// we are about to switch views, if the document being switched is active, save that state so we can set it again after being moved
+					bool bWasActive = false;
+
+					if( (gCurrentView == MAIN_VIEW) && OwnerDrawnTemplate_MAIN.IsActiveDocEnabled() )
+					{
+						bWasActive = true;
+					}
+					else if( (gCurrentView == SUB_VIEW) && OwnerDrawnTemplate_SUB.IsActiveDocEnabled() )
+					{
+						bWasActive = true;
+					}
+
 					ret = ::CallWindowProc(wndProcNotepad, hWnd, message, wParam, lParam);
 					UpdateDocs();  // switching views changes which Scintilla view is the current view
+
+					if( (gCurrentView == MAIN_VIEW) && OwnerDrawnTemplate_MAIN.IsActiveDocValid() )
+					{
+						OwnerDrawnTemplate_MAIN.Documents[OwnerDrawnTemplate_MAIN.active_doc_index].bIsEnabled = bWasActive;
+						UpdateDocs();
+					}
+					else if( (gCurrentView == SUB_VIEW) && OwnerDrawnTemplate_SUB.IsActiveDocValid() )
+					{
+						OwnerDrawnTemplate_SUB.Documents[OwnerDrawnTemplate_SUB.active_doc_index].bIsEnabled = bWasActive;
+						UpdateDocs();
+					}
+
 					break;
 				}
 
@@ -650,14 +695,14 @@ LRESULT CALLBACK SubWndProcNotepad(HWND hWnd, UINT message, WPARAM wParam, LPARA
 					// we are about to switch views, but the IDM_VIEW_SWITCHTO_OTHER_VIEW code in NppCommands.cpp won't work unless Npp thinks it has focus, so give it focus
 					if( gCurrentView == MAIN_VIEW )
 					{
-						if( (OwnerDrawnTemplate_MAIN.active_doc_index >= 0) && (OwnerDrawnTemplate_MAIN.active_doc_index < (INT)OwnerDrawnTemplate_MAIN.Documents.size()) && OwnerDrawnTemplate_MAIN.Documents[OwnerDrawnTemplate_MAIN.active_doc_index].bIsEnabled )
+						if( OwnerDrawnTemplate_MAIN.IsActiveDocEnabled() )
 						{
 							::SetFocus(OwnerDrawnTemplate_MAIN._hParentHandle);
 						}
 					}
 					else if( gCurrentView == SUB_VIEW )
 					{
-						if( (OwnerDrawnTemplate_SUB.active_doc_index >= 0) && (OwnerDrawnTemplate_SUB.active_doc_index < (INT)OwnerDrawnTemplate_SUB.Documents.size()) && OwnerDrawnTemplate_SUB.Documents[OwnerDrawnTemplate_SUB.active_doc_index].bIsEnabled )
+						if( OwnerDrawnTemplate_SUB.IsActiveDocEnabled() )
 						{
 							::SetFocus(OwnerDrawnTemplate_SUB._hParentHandle);
 						}
@@ -682,10 +727,56 @@ LRESULT CALLBACK SubWndProcNotepad(HWND hWnd, UINT message, WPARAM wParam, LPARA
 
 			switch (notifyCode->nmhdr.code)
 			{
+//				case TCN_TABDROPPED:
+				case TCN_TABDROPPEDOUTSIDE:
+				{
+					//DebugLog("SubWndProcNotepad: TCN_TABDROPPEDOUTSIDE");
+
+					int currentView = gCurrentView;
+
+					// we are about to switch views, if the document being switched is active, save that state so we can set it again after being moved
+					bool bWasActive = false;
+
+					if( (gCurrentView == MAIN_VIEW) && OwnerDrawnTemplate_MAIN.IsActiveDocEnabled() )
+					{
+						bWasActive = true;
+					}
+					else if( (gCurrentView == SUB_VIEW) && OwnerDrawnTemplate_SUB.IsActiveDocEnabled() )
+					{
+						bWasActive = true;
+					}
+
+					ret = ::CallWindowProc(wndProcNotepad, hWnd, message, wParam, lParam);
+
+					if( currentView != gCurrentView )
+					{
+						if( (gCurrentView == MAIN_VIEW) && OwnerDrawnTemplate_MAIN.IsActiveDocValid() )
+						{
+							OwnerDrawnTemplate_MAIN.Documents[OwnerDrawnTemplate_MAIN.active_doc_index].bIsEnabled = bWasActive;
+							UpdateDocs();
+						}
+						else if( (gCurrentView == SUB_VIEW) && OwnerDrawnTemplate_SUB.IsActiveDocValid() )
+						{
+							OwnerDrawnTemplate_SUB.Documents[OwnerDrawnTemplate_SUB.active_doc_index].bIsEnabled = bWasActive;
+							UpdateDocs();
+						}
+					}
+
+					break;
+				}
+
 				case TCN_FOCUSCHANGE:
-				case TCN_SELCHANGE:  // change between tabs in the same view (MAIN or SUB)
+				case TCN_SELCHANGE:  // change between tabs in the same view (MAIN or SUB) or from one view to the other (drag/drop tab across views)
 				{
 					//DebugLog("SubWndProcNotepad: TCN_SELCHANGE");
+					ret = ::CallWindowProc(wndProcNotepad, hWnd, message, wParam, lParam);
+					UpdateDocs();  // changing tabs changes which document is active
+					break;
+				}
+
+				case TCN_TABDELETE:
+				{
+					//DebugLog("SubWndProcNotepad: TCN_TABDELETE");
 					ret = ::CallWindowProc(wndProcNotepad, hWnd, message, wParam, lParam);
 					UpdateDocs();  // changing tabs changes which document is active
 					break;

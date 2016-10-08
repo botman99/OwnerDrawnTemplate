@@ -82,12 +82,12 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 	switch (ul_reason_for_call)
 	{
 		case DLL_PROCESS_ATTACH:
-			DebugLog("DLL_PROCESS_ATTACH");
+			//DebugLog("DLL_PROCESS_ATTACH");
 	        pluginInit(hModule);
 			break;
 
 		case DLL_PROCESS_DETACH:
-			DebugLog("DLL_PROCESS_DETACH");
+			//DebugLog("DLL_PROCESS_DETACH");
 	        pluginCleanUp();
 			break;
 	}
@@ -124,7 +124,11 @@ extern "C" __declspec(dllexport) FuncItem * getFuncsArray(int *nbF)
 
 extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 {
-	if (notifyCode->nmhdr.hwndFrom == nppData._nppHandle)
+	if( notifyCode->nmhdr.code == NPPN_DOCORDERCHANGED )
+	{
+		UpdateDocs();
+	}
+	else if (notifyCode->nmhdr.hwndFrom == nppData._nppHandle)
 	{
 		switch (notifyCode->nmhdr.code) 
 		{

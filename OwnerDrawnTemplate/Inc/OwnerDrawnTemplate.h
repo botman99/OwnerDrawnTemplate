@@ -35,6 +35,12 @@
 #include "StaticDialog.h"
 
 
+//Notification message
+#define TCN_TABDROPPED (TCN_FIRST - 10)
+#define TCN_TABDROPPEDOUTSIDE (TCN_FIRST - 11)
+#define TCN_TABDELETE (TCN_FIRST - 12)
+
+
 void DebugLog(const char* format, ... );
 
 void AboutDlg();
@@ -43,6 +49,7 @@ void ToggleDlg();
 void UpdateDocs();
 void UpdateFocus();
 void SetupWindows();
+void RedrawListView();
 
 LRESULT CALLBACK SubWndProcNotepad(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -82,6 +89,8 @@ public:
 	void ToggleActiveDoc();
 	void UpdateDocs(LPCTSTR* Filenames, UINT filename_count, INT active_doc_index);
 	void UpdateFocus();
+	bool IsActiveDocValid();
+	bool IsActiveDocEnabled();
 	void RedrawListView();
 
 protected :
