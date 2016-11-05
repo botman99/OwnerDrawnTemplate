@@ -200,6 +200,12 @@ void COwnerDrawnTemplate::init(int in_view)
 
 void COwnerDrawnTemplate::SetupWindow()
 {
+	void* p = GetProp(_hParentHandle, TEXT("OwnerDrawn_hWnd"));  // get the window handle of the owner drawn plugin that "owns" this parent window
+	if( p && (p != _hSelf) )  // if someone owns this window, but it's not us, bail out here because we don't know if this should be shown or hidden
+	{
+		return;
+	}
+
 	if( bIsNppReady )
 	{
 		if( active_doc_index == -1 )  // no documents open in this view?
@@ -207,6 +213,8 @@ void COwnerDrawnTemplate::SetupWindow()
 			::ShowWindow(_hSelf, SW_HIDE);  // hide our window
 			::ShowWindow(_hListCtrl, SW_HIDE);  // hide the list control in our window
 			::ShowWindow(_hParentHandle, SW_HIDE);  // hide the parent handle window
+
+			SetProp(_hParentHandle, TEXT("OwnerDrawn_hWnd"), nullptr);  // we no longer "own" this parent window
 		}
 		else if( IsActiveDocEnabled() )
 		{
@@ -239,6 +247,8 @@ void COwnerDrawnTemplate::SetupWindow()
 				::ShowWindow(_hSelf, SW_SHOW);  // show our window
 				::ShowWindow(_hListCtrl, SW_SHOW);  // show the list control in our window
 				::ShowWindow(_hParentHandle, SW_HIDE);  // hide the parent handle window (the normal text view)
+
+				SetProp(_hParentHandle, TEXT("OwnerDrawn_hWnd"), _hSelf);  // we now "own" this parent window, don't let other OwnerDrawn plugins change it
 			}
 		}
 		else
@@ -248,6 +258,8 @@ void COwnerDrawnTemplate::SetupWindow()
 				::ShowWindow(_hSelf, SW_HIDE);  // hide our window
 				::ShowWindow(_hListCtrl, SW_HIDE);  // hide the list control in our window
 				::ShowWindow(_hParentHandle, SW_SHOW);  // show the parent handle window
+
+				SetProp(_hParentHandle, TEXT("OwnerDrawn_hWnd"), nullptr);  // we no longer "own" this parent window
 			}
 		}
 	}
@@ -255,6 +267,13 @@ void COwnerDrawnTemplate::SetupWindow()
 
 void COwnerDrawnTemplate::ToggleActiveDoc()
 {
+	void* p = GetProp(_hParentHandle, TEXT("OwnerDrawn_hWnd"));  // get the window handle of the owner drawn plugin that "owns" this parent window
+	if( p && (p != _hSelf) )  // if someone owns this window, but it's not us, bail out here because we don't know if this should be shown or hidden
+	{
+	    ::MessageBox(_hSelf, TEXT("Some other plugin owns this window!"), TEXT("Warning"), MB_OK | MB_ICONWARNING);
+		return;
+	}
+
 	if( IsActiveDocValid() )
 	{
 		Documents[active_doc_index].bIsEnabled = !Documents[active_doc_index].bIsEnabled;
